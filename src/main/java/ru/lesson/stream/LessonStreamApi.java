@@ -4,27 +4,15 @@ import ru.lesson.stream.dto.Employee;
 import ru.lesson.stream.dto.PositionType;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Задачи для семинара по Stream API.
  */
 public class LessonStreamApi {
-
-    public static void main(String[] args) {
-        Employee employee1 = new Employee(1, "Ivan", 40);
-        Employee employee2 = new Employee(2, "Olga", 50);
-        Employee employee3 = new Employee(3, "John", 60);
-        Employee employee4 = new Employee(4, "Tom", 85);
-        List<Employee> employees = Arrays.asList(
-                employee1, employee2, employee2, employee3, employee3, employee4, employee4
-        );
-
-        LessonStreamApi lessonStreamApi = new LessonStreamApi();
-
-        List<Employee> result = lessonStreamApi.task1(employees);
-    }
 
     /**
      * Задача №1.
@@ -32,7 +20,6 @@ public class LessonStreamApi {
      * Важно: Необходимо учесть, что List<Employee> employees может содержать дублирующие записи.
      */
     public List<Employee> task1(List<Employee> employees) {
-
         return employees.stream()
                 .distinct()
                 .filter(emp -> emp.getRating() > 50)
@@ -49,9 +36,6 @@ public class LessonStreamApi {
                 .filter(emp -> emp.getRating() < 50)
                 .map(emp -> emp.getName() + "=" + emp.getRating())
                 .collect(Collectors.toList());
-
-        //Ivan=40, Bob=45
-        //return null;
     }
 
     /**
@@ -79,15 +63,8 @@ public class LessonStreamApi {
         return employeeDepartments.stream()
                 .flatMap(Collection::stream)
                 .distinct()
-                .sorted(new Comparator<Employee>() {
-                    @Override
-                    public int compare(Employee employee, Employee t1) {
-                        return t1.getRating() - employee.getRating();
-                    }
-                })
+                .sorted((employee, t1) -> t1.getRating() - employee.getRating())
                 .collect(Collectors.toList());
-
-        //return null;
     }
 
     /**
@@ -108,24 +85,17 @@ public class LessonStreamApi {
      * @return список сотрудников
      */
     public List<Employee> task5(List<Employee> employees, int number, int size) {
-        if (number <= 0)
-
-        {
+        if (number <= 0) {
             throw new IllegalArgumentException(Integer.toString(number));
         }
 
-        if (number > 1)
-            return employees.stream()
-                    .skip((number - 1) * size)
-                    .limit(size)
-                    .collect(Collectors.toList());
-        else
-            return employees.stream()
-                    .limit(size)
-                    .collect(Collectors.toList());
+        Stream<Employee> emps = employees.stream();
 
+        if (number > 1) {
+            emps = emps.skip((number - 1) * size);
+        }
 
-//        return null;
+        return emps.limit(size).collect(Collectors.toList());
     }
 
     /**
@@ -140,8 +110,6 @@ public class LessonStreamApi {
         return employees.stream()
                 .map(Employee::getName)
                 .collect(Collectors.joining(", ", "[", "]"));
-
-//        return null;
     }
 
     /**
@@ -152,13 +120,7 @@ public class LessonStreamApi {
      * @return если дубли существуют, то true, иначе false
      */
     public boolean task7(List<Employee> employees) {
-        employees.stream()
-                .map(Employee::getName)
-                .collect(Collector.of())
-        //реализовать коллектор который добавлял бы во множество и если не получается (там есть такой элемент),
-        //то добавлял бы его в список. Возвращать признак полученный список пуст или нет
-
-        return false;
+        return !employees.stream().map(Employee::getName).allMatch(new HashSet<String>()::add);
     }
 
     /**
@@ -170,13 +132,8 @@ public class LessonStreamApi {
      */
     public Map<PositionType, Double> task8(List<Employee> employees) {
         return employees.stream()
-                .collect(Collectors.toMap(
-                        Employee::getPositionType,
-                        emp -> emp.getRating() / 1.0,
-                        (a, b) -> (a + b) / 2.0
-                ));
-
-//        return null;
+                .collect(Collectors.groupingBy(Employee::getPositionType,
+                            Collectors.averagingDouble(Employee::getRating)));
     }
 
     /**
@@ -190,7 +147,11 @@ public class LessonStreamApi {
      * @return словарь с количеством эффективных и неэффективных сотрудников
      */
     public Map<Boolean, Long> task9(List<Employee> employees) {
-        return null;
+        return employees.stream()
+                .collect(Collectors.groupingBy(
+                        emp -> emp.getRating() > 50,
+                        Collectors.counting()));
+
     }
 
     /**
@@ -204,7 +165,11 @@ public class LessonStreamApi {
      * @return словарь с списком имен {@link Employee#getName()} через ", " эффективных и неэффективных сотрудников
      */
     public Map<Boolean, String> task10(List<Employee> employees) {
-        return null;
+        return employees.stream()
+                .collect(Collectors.groupingBy(
+                        emp -> emp.getRating() > 50,
+                        Collectors.mapping(Employee::getName, Collectors.joining(", "))
+                ));
     }
 
 }
